@@ -8,10 +8,39 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
   config.ssh.keep_alive = true
 
+  # use mirror which keeps old versions
+  config.vm.provision "switch-mirror", type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+      echo http://ftp.eu.openbsd.org/pub/OpenBSD > /etc/installurl
+    SHELL
+  end
+
+  # 7.5 -> 7.6
+  config.vm.provision "7.6-base", reboot: true, type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+      sysupgrade -n
+    SHELL
+  end
+  config.vm.provision "7.6-pkg", type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+      pkg_add -u
+    SHELL
+  end
+
+  # 7.6 -> 7.7
+  config.vm.provision "7.7-base", reboot: true, type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+      sysupgrade -n
+    SHELL
+  end
+  config.vm.provision "7.7-pkg", type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+      pkg_add -u
+    SHELL
+  end
+
   config.vm.provision "init", type: "shell", run: "once" do |sh|
     sh.inline = <<~SHELL
-      set -ex
-      export PKG_PATH=https://mirrors.ocf.berkeley.edu/pub/OpenBSD/7.5/packages/amd64/
       pkg_add -x git
 
       ftp https://go.dev/dl/go#{ENV['GO_VERSION']}.openbsd-amd64.tar.gz
